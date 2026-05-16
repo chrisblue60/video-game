@@ -2,19 +2,14 @@
 
 #include <iostream>
 
-#if __has_include(<SDL3/SDL.h>)
-#include <SDL3/SDL.h>
-#define HAVE_SDL 1
-#define SDL_VER 3
-#elif __has_include(<SDL2/SDL.h>)
+#if __has_include(<SDL2/SDL.h>)
 #include <SDL2/SDL.h>
-#define HAVE_SDL 1
-#define SDL_VER 2
+#define HAVE_SDL2 1
 #else
-#define HAVE_SDL 0
+#define HAVE_SDL2 0
 #endif
 
-#if HAVE_SDL
+#if HAVE_SDL2
 #include <sstream>
 
 #include "playtest/PlaytestSimulation.hpp"
@@ -67,34 +62,22 @@ void RenderScene(SDL_Renderer* renderer, const PlaytestState& state) {
           << " Alive=" << AliveTargets(state)
           << " Round=" << state.combat.roundTimeSeconds
           << " Best=" << state.combat.bestRoundSeconds;
-#if SDL_VER == 3
-    SDL_SetWindowTitle(SDL_GetRenderWindow(renderer), title.str().c_str());
-#else
     SDL_Window* window = SDL_RenderGetWindow(renderer);
     SDL_SetWindowTitle(window, title.str().c_str());
-#endif
     SDL_RenderPresent(renderer);
 }
 }  // namespace
 #endif
 
 int PlaytestApp::Run() {
-#if !HAVE_SDL
-    std::cerr << "SDL headers not found. Install SDL2 or SDL3 development package to run playtest mode.\n";
+#if !HAVE_SDL2
+    std::cerr << "SDL2 headers not found. Install libsdl2-dev to run playtest mode.\n";
     return 1;
 #else
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) return 1;
-#if SDL_VER == 3
-    SDL_Window* window = SDL_CreateWindow("Playtest", kWidth, kHeight, 0);
-#else
     SDL_Window* window = SDL_CreateWindow("Playtest", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, kWidth, kHeight, SDL_WINDOW_SHOWN);
-#endif
     if (!window) return 1;
-#if SDL_VER == 3
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
-#else
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-#endif
     if (!renderer) return 1;
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
@@ -106,15 +89,9 @@ int PlaytestApp::Run() {
         float mouseDx = 0.0F, mouseDy = 0.0F;
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-#if SDL_VER == 3
-            if (event.type == SDL_EVENT_QUIT) running = false;
-            else if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) running = false;
-            else if (event.type == SDL_EVENT_MOUSE_MOTION) {
-#else
             if (event.type == SDL_QUIT) running = false;
             else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) running = false;
             else if (event.type == SDL_MOUSEMOTION) {
-#endif
                 mouseDx += static_cast<float>(event.motion.xrel);
                 mouseDy += static_cast<float>(event.motion.yrel);
             }
@@ -123,11 +100,7 @@ int PlaytestApp::Run() {
         PlaytestInput input = BuildInput(keys, mouseDx, mouseDy);
         PlaytestSimulation::Step(state, input, kFixedDt);
         RenderScene(renderer, state);
-#if SDL_VER == 3
-        SDL_DelayNS(16 * 1000 * 1000);
-#else
         SDL_Delay(16);
-#endif
     }
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

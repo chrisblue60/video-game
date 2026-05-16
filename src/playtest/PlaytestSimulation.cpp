@@ -16,7 +16,9 @@ constexpr int kMagSize = 30;
 constexpr float kHitDistance = 30.0F;
 constexpr float kHitCosThreshold = 0.98F;
 
-float DegToRad(float deg) { return deg * static_cast<float>(M_PI / 180.0); }
+constexpr double PI = 3.14159265358979323846;
+
+float DegToRad(float deg) { return deg * static_cast<float>(PI / 180.0); }
 
 void SeedTargets(PlaytestState& state) {
     state.targets.clear();

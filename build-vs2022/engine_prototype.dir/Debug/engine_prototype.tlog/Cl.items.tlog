@@ -1,0 +1,15 @@
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\main.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\main.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\Engine.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\Engine.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\GameLoop.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\GameLoop.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\EngineConfigLoader.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\EngineConfigLoader.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\WorldClock.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\WorldClock.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\SubsystemPipeline.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\SubsystemPipeline.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\EntityManager.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\EntityManager.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\TransformStore.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\TransformStore.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\VelocityStore.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\VelocityStore.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\GravityStore.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\GravityStore.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\ColliderStore.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\ColliderStore.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\World.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\World.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\subsystems\Renderer.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\Renderer.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\subsystems\Physics.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\Physics.obj
+C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\subsystems\WorldSim.cpp;C:\Users\chris\OneDrive\Documents\GitHub\video-game\build-vs2022\engine_prototype.dir\Debug\WorldSim.obj

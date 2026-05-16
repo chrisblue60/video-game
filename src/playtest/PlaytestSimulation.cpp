@@ -15,6 +15,9 @@ constexpr float kFireIntervalSeconds = 0.10F;
 constexpr int kMagSize = 30;
 constexpr float kHitDistance = 30.0F;
 constexpr float kHitCosThreshold = 0.98F;
+constexpr float kHitFlashSeconds = 0.15F;
+constexpr float kRecoilKickDeg = 1.3F;
+constexpr float kRecoilRecoverDegPerSec = 7.0F;
 
 constexpr double PI = 3.14159265358979323846;
 
@@ -49,6 +52,7 @@ void ResetRound(PlaytestState& state) {
 bool FireWeapon(PlaytestState& state) {
     if (state.weapon.fireCooldownSeconds > 0.0F || state.weapon.ammoInMag <= 0) return false;
     state.weapon.ammoInMag -= 1;
+    state.camera.recoilPitchDeg += kRecoilKickDeg;
     state.weapon.shotsFired += 1;
     state.weapon.fireCooldownSeconds = kFireIntervalSeconds;
     return true;
@@ -56,7 +60,7 @@ bool FireWeapon(PlaytestState& state) {
 
 void ResolveHitscan(PlaytestState& state) {
     const float yawRad = DegToRad(state.camera.yawDeg);
-    const float pitchRad = DegToRad(state.camera.pitchDeg);
+    const float pitchRad = DegToRad(state.camera.pitchDeg - state.camera.recoilPitchDeg);
     const float dirX = std::cos(yawRad) * std::cos(pitchRad);
     const float dirY = -std::sin(pitchRad);
     const float dirZ = std::sin(yawRad) * std::cos(pitchRad);
@@ -76,6 +80,7 @@ void ResolveHitscan(PlaytestState& state) {
         const float dot = dirX * toTargetX + dirY * toTargetY + dirZ * toTargetZ;
         if (dot >= kHitCosThreshold) {
             target.alive = false;
+            target.hitFlashSeconds = kHitFlashSeconds;
             state.combat.targetsHit += 1;
             return;
         }
@@ -110,8 +115,13 @@ void PlaytestSimulation::Step(PlaytestState& state, const PlaytestInput& input, 
     EnsureTargetsSeeded(state);
     if (input.resetRound) ResetRound(state);
 
+    for (TargetState& target : state.targets) {
+        target.hitFlashSeconds = std::max(0.0F, target.hitFlashSeconds - dt);
+    }
+
     state.camera.yawDeg += input.mouseDeltaX * kMouseSensitivity;
     state.camera.pitchDeg -= input.mouseDeltaY * kMouseSensitivity;
+    state.camera.recoilPitchDeg = std::max(0.0F, state.camera.recoilPitchDeg - (kRecoilRecoverDegPerSec * dt));
     state.camera.pitchDeg = std::clamp(state.camera.pitchDeg, -89.0F, 89.0F);
 
     float moveForward = 0.0F, moveRight = 0.0F;

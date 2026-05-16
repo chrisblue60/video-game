@@ -10,6 +10,7 @@ struct CameraState {
     float z = 0.0F;
     float yawDeg = 0.0F;
     float pitchDeg = 0.0F;
+    float recoilPitchDeg = 0.0F;
 };
 
 struct PlayerState {
@@ -33,6 +34,7 @@ struct TargetState {
     float y = 1.0F;
     float z = 0.0F;
     bool alive = true;
+    float hitFlashSeconds = 0.0F;
 };
 
 struct CombatState {

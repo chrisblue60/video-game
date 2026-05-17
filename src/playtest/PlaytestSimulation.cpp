@@ -1,4 +1,5 @@
 #include "playtest/PlaytestSimulation.hpp"
+#include "playtest/ActionRules.hpp"
 #include "playtest/BulletRules.hpp"
 #include "playtest/VisualRules.hpp"
 
@@ -100,16 +101,17 @@ void UpdateWorldRules(PlaytestState& state, const PlaytestInput& input) {
         }
     }
 
-    if (input.placeStructure) {
+    if (input.placeStructure &&
+        ActionRules::Validate(state, ActionRequest{ActionType::PlaceStructure, true, false, 2.0F}).accepted) {
         if (state.worldRules.canPlaceNow) {
             state.worldRules.buildCredits -= 1;
             state.worldRules.placedStructures += 1;
             state.worldRules.lastInteraction = "Structure placed in parcel.";
-        } else if (!state.worldRules.inBuildParcel) {
-            state.worldRules.lastInteraction = "Cannot place: move into a build parcel.";
-        } else {
-            state.worldRules.lastInteraction = "Cannot place: no build credits.";
         }
+    } else if (input.placeStructure && !state.worldRules.inBuildParcel) {
+        state.worldRules.lastInteraction = "Cannot place: move into a build parcel.";
+    } else if (input.placeStructure) {
+        state.worldRules.lastInteraction = "Cannot place: no build credits.";
     }
 }
 
@@ -197,13 +199,15 @@ void ResolvePlayerCollisions(PlaytestState& state) {
 
 void UpdateWeapon(PlaytestState& state, const PlaytestInput& input, float dt) {
     state.weapon.fireCooldownSeconds = std::max(0.0F, state.weapon.fireCooldownSeconds - dt);
-    if (input.reload && state.weapon.ammoInMag < kMagSize && state.weapon.reserveAmmo > 0) {
+    if (input.reload && ActionRules::Validate(state, ActionRequest{ActionType::Reload, true, false, 0.0F}).accepted &&
+        state.weapon.ammoInMag < kMagSize && state.weapon.reserveAmmo > 0) {
         const int need = kMagSize - state.weapon.ammoInMag;
         const int load = std::min(need, state.weapon.reserveAmmo);
         state.weapon.ammoInMag += load;
         state.weapon.reserveAmmo -= load;
     }
-    if (input.fire && FireWeapon(state)) {
+    if (input.fire && ActionRules::Validate(state, ActionRequest{ActionType::Shoot, true, false, kHitDistance}).accepted &&
+        FireWeapon(state)) {
         ResolveHitscan(state);
         state.camera.recoilPitchDeg += kRecoilKickDeg;
     }

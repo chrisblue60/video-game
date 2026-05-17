@@ -1,4 +1,5 @@
 #include "playtest/PlaytestSimulation.hpp"
+#include "playtest/ActionRules.hpp"
 #include "playtest/VisualRules.hpp"
 
 #include <cmath>
@@ -23,6 +24,7 @@ int main() {
     { PlaytestState s{}; s.camera.yawDeg=5.0F; PlaytestInput i{}; i.fire=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.weapon.shotsHit!=0) return Fail("precise miss outside projected hitbox"); }
     { PlaytestState s{}; s.player.z=7.0F; s.camera.z=7.0F; PlaytestInput i{}; i.fire=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.weapon.shotsHit!=1) return Fail("close-range hit should register"); }
     { PlaytestState s{}; s.weapon.ammoInMag=5; s.weapon.reserveAmmo=10; PlaytestInput i{}; i.reload=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.weapon.ammoInMag!=15||s.weapon.reserveAmmo!=0) return Fail("reload"); }
+    { PlaytestState s{}; s.weapon.ammoInMag=0; ActionResult r=ActionRules::Validate(s, ActionRequest{ActionType::Shoot,true,false,0.0F}); if(r.accepted) return Fail("action rules shoot validation"); }
     { PlaytestState s{}; PlaytestInput i{}; i.fire=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.combat.targetsHit<1) return Fail("hitscan"); }
     { PlaytestState s{}; s.targets={TargetState{0.0F,1.0F,8.0F,true},TargetState{0.0F,1.0F,12.0F,true}}; PlaytestInput i{}; i.fire=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.combat.targetsHit!=1) return Fail("single-hit only"); if(s.targets[1].alive!=true) return Fail("cannot hit two targets"); }
     { PlaytestState s{}; s.targets={TargetState{0.0F,1.0F,12.0F,true}}; s.worldObjects={WorldObject{"Blocker",0.0F,0.9F,8.0F,2.0F,1.0F,InteractionType::None,false,0.0F}}; PlaytestInput i{}; i.fire=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.targets[0].alive!=true) return Fail("object should block target hit"); }

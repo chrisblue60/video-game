@@ -12,6 +12,8 @@ struct PlaytestInput {
     bool fire = false;
     bool reload = false;
     bool resetRound = false;
+    bool interact = false;
+    bool placeStructure = false;
     float mouseDeltaX = 0.0F;
     float mouseDeltaY = 0.0F;
 };

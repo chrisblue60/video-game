@@ -45,11 +45,36 @@ struct CombatState {
     float bestRoundSeconds = 0.0F;
 };
 
+enum class InteractionType {
+    None,
+    LibraryTerminal,
+    BuildParcel,
+};
+
+struct WorldObject {
+    const char* name = "";
+    float x = 0.0F;
+    float y = 0.0F;
+    float z = 0.0F;
+    float interactionRadius = 2.0F;
+    InteractionType interaction = InteractionType::None;
+};
+
+struct WorldRulesState {
+    int buildCredits = 4;
+    int placedStructures = 0;
+    bool inBuildParcel = false;
+    bool canPlaceNow = false;
+    const char* lastInteraction = "";
+};
+
 struct PlaytestState {
     PlayerState player{};
     CameraState camera{};
     WeaponState weapon{};
     CombatState combat{};
     std::vector<TargetState> targets{};
+    std::vector<WorldObject> worldObjects{};
+    WorldRulesState worldRules{};
     WorldClock clock{};
 };

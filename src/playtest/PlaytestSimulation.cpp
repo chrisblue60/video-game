@@ -34,6 +34,12 @@ void EnsureTargetsSeeded(PlaytestState& state) {
     if (state.targets.empty()) SeedTargets(state);
 }
 
+void EnsureWorldSeeded(PlaytestState& state) {
+    if (!state.worldObjects.empty()) return;
+    state.worldObjects.push_back(WorldObject{"Library Terminal", -6.0F, 0.9F, 12.0F, 2.2F, InteractionType::LibraryTerminal});
+    state.worldObjects.push_back(WorldObject{"Build Parcel A", 6.0F, 0.9F, 10.0F, 4.0F, InteractionType::BuildParcel});
+}
+
 int CountAliveTargets(const PlaytestState& state) {
     int alive = 0;
     for (const auto& t : state.targets) alive += t.alive ? 1 : 0;
@@ -49,6 +55,55 @@ void ResetRound(PlaytestState& state) {
     state.weapon.shotsFired = 0;
     state.weapon.shotsHit = 0;
     state.combat.roundTimeSeconds = 0.0F;
+}
+
+float DistanceSq(float ax, float ay, float az, float bx, float by, float bz) {
+    const float dx = ax - bx;
+    const float dy = ay - by;
+    const float dz = az - bz;
+    return dx * dx + dy * dy + dz * dz;
+}
+
+void UpdateWorldRules(PlaytestState& state, const PlaytestInput& input) {
+    state.worldRules.inBuildParcel = false;
+    state.worldRules.canPlaceNow = false;
+    for (const auto& object : state.worldObjects) {
+        if (object.interaction != InteractionType::BuildParcel) continue;
+        const float d2 = DistanceSq(state.player.x, state.player.y, state.player.z, object.x, object.y, object.z);
+        if (d2 <= object.interactionRadius * object.interactionRadius) {
+            state.worldRules.inBuildParcel = true;
+            break;
+        }
+    }
+
+    state.worldRules.canPlaceNow = state.worldRules.inBuildParcel && state.worldRules.buildCredits > 0;
+
+    if (input.interact) {
+        for (const auto& object : state.worldObjects) {
+            const float d2 = DistanceSq(state.player.x, state.player.y, state.player.z, object.x, object.y, object.z);
+            if (d2 > object.interactionRadius * object.interactionRadius) continue;
+            if (object.interaction == InteractionType::LibraryTerminal) {
+                state.worldRules.lastInteraction = "Library opened: minigame and world-building guides available.";
+                return;
+            }
+            if (object.interaction == InteractionType::BuildParcel) {
+                state.worldRules.lastInteraction = "Parcel rules: place structures with B while credits remain.";
+                return;
+            }
+        }
+    }
+
+    if (input.placeStructure) {
+        if (state.worldRules.canPlaceNow) {
+            state.worldRules.buildCredits -= 1;
+            state.worldRules.placedStructures += 1;
+            state.worldRules.lastInteraction = "Structure placed in parcel.";
+        } else if (!state.worldRules.inBuildParcel) {
+            state.worldRules.lastInteraction = "Cannot place: move into a build parcel.";
+        } else {
+            state.worldRules.lastInteraction = "Cannot place: no build credits.";
+        }
+    }
 }
 
 bool FireWeapon(PlaytestState& state) {
@@ -118,6 +173,7 @@ void UpdateRoundProgress(PlaytestState& state, float dt) {
 
 void PlaytestSimulation::Step(PlaytestState& state, const PlaytestInput& input, float dt) {
     EnsureTargetsSeeded(state);
+    EnsureWorldSeeded(state);
     if (input.resetRound) ResetRound(state);
 
     for (TargetState& target : state.targets) {
@@ -160,5 +216,6 @@ void PlaytestSimulation::Step(PlaytestState& state, const PlaytestInput& input, 
 
     UpdateWeapon(state, input, dt);
     UpdateRoundProgress(state, dt);
+    UpdateWorldRules(state, input);
     state.clock.Advance(dt, kWorldHoursPerSecond);
 }

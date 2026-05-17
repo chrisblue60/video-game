@@ -38,6 +38,8 @@ PlaytestInput BuildInput(const Uint8* keys, float mouseDx, float mouseDy) {
     input.fire = keys[SDL_SCANCODE_LCTRL] != 0 || keys[SDL_SCANCODE_RCTRL] != 0;
     input.reload = keys[SDL_SCANCODE_R] != 0;
     input.resetRound = keys[SDL_SCANCODE_T] != 0;
+    input.interact = keys[SDL_SCANCODE_E] != 0;
+    input.placeStructure = keys[SDL_SCANCODE_B] != 0;
     input.mouseDeltaX = mouseDx;
     input.mouseDeltaY = mouseDy;
     return input;
@@ -163,6 +165,22 @@ void RenderTargets(SDL_Renderer* renderer, const PlaytestState& state) {
     }
 }
 
+void RenderWorldObjects(SDL_Renderer* renderer, const PlaytestState& state) {
+    for (const auto& object : state.worldObjects) {
+        int sx = 0, sy = 0;
+        if (!ProjectPoint(state, object.x, object.y, object.z, sx, sy)) continue;
+        if (object.interaction == InteractionType::LibraryTerminal) {
+            SDL_SetRenderDrawColor(renderer, 90, 170, 255, 255);
+        } else if (object.interaction == InteractionType::BuildParcel) {
+            SDL_SetRenderDrawColor(renderer, 255, 180, 80, 255);
+        } else {
+            SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
+        }
+        SDL_Rect marker{sx - 10, sy - 20, 20, 20};
+        SDL_RenderDrawRect(renderer, &marker);
+    }
+}
+
 
 void DrawDigit(SDL_Renderer* renderer, int x, int y, int scale, int digit) {
     static constexpr bool seg[10][7] = {
@@ -188,7 +206,7 @@ void DrawNumber(SDL_Renderer* renderer, int x, int y, int scale, int value) {
 
 void DrawHudOverlay(SDL_Renderer* renderer, const PlaytestState& state) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 160);
-    SDL_Rect panel{16, 16, 340, 120};
+    SDL_Rect panel{16, 16, 420, 170};
     SDL_RenderFillRect(renderer, &panel);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderDrawRect(renderer, &panel);
@@ -212,6 +230,15 @@ void DrawHudOverlay(SDL_Renderer* renderer, const PlaytestState& state) {
     SDL_Rect accBar{231, 95, static_cast<int>(std::min(98.0f, AccuracyPercent(state) * 0.98f)), 10};
     SDL_RenderFillRect(renderer, &accBar);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+    // World-building state: credits / placed / parcel state
+    DrawNumber(renderer, 30, 126, 2, state.worldRules.buildCredits);
+    DrawNumber(renderer, 130, 126, 2, state.worldRules.placedStructures);
+    SDL_SetRenderDrawColor(renderer, state.worldRules.inBuildParcel ? 50 : 220,
+                           state.worldRules.inBuildParcel ? 220 : 60, 60, 255);
+    SDL_Rect parcelState{230, 126, state.worldRules.inBuildParcel ? 36 : 18, 12};
+    SDL_RenderFillRect(renderer, &parcelState);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 }
 
 void RenderScene(SDL_Renderer* renderer, const PlaytestState& state) {
@@ -232,6 +259,7 @@ void RenderScene(SDL_Renderer* renderer, const PlaytestState& state) {
 
     RenderGrid(renderer, state, horizon);
     RenderTargets(renderer, state);
+    RenderWorldObjects(renderer, state);
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderDrawLine(renderer, kWidth / 2 - 8, kHeight / 2, kWidth / 2 + 8, kHeight / 2);

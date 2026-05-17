@@ -34,6 +34,7 @@ if(ENABLE_PLAYTEST_SDL)
       src/playtest/main_playtest.cpp
       src/playtest/PlaytestApp.cpp
       src/playtest/PlaytestSimulation.cpp
+      src/playtest/BulletRules.cpp
       src/playtest/VisualRules.cpp
       src/core/WorldClock.cpp)
   target_include_directories(engine_playtest PRIVATE src)
@@ -71,6 +72,7 @@ endif()
 add_executable(playtest_simulation_tests
     tests/PlaytestSimulationTests.cpp
     src/playtest/PlaytestSimulation.cpp
+    src/playtest/BulletRules.cpp
     src/playtest/VisualRules.cpp
     src/core/WorldClock.cpp)
 target_include_directories(playtest_simulation_tests PRIVATE src)

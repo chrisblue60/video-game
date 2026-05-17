@@ -1,4 +1,5 @@
 #include "playtest/PlaytestSimulation.hpp"
+#include "playtest/BulletRules.hpp"
 #include "playtest/VisualRules.hpp"
 
 #include <algorithm>
@@ -141,39 +142,24 @@ void ResolveHitscan(PlaytestState& state) {
         return cxScreen >= minX && cxScreen <= maxX && cyScreen >= minY && cyScreen <= maxY;
     };
 
-    for (TargetState& target : state.targets) {
-        if (!target.alive) continue;
-        const float dx = target.x - state.camera.x;
-        const float dy = target.y - state.camera.y;
-        const float dz = target.z - state.camera.z;
-        const float distSq = dx * dx + dy * dy + dz * dz;
-        if (distSq > kHitDistance * kHitDistance) continue;
-
-        const float invDist = 1.0F / std::sqrt(distSq);
-        const float toTargetX = dx * invDist;
-        const float toTargetY = dy * invDist;
-        const float toTargetZ = dz * invDist;
-        const float dot = dirX * toTargetX + dirY * toTargetY + dirZ * toTargetZ;
-        if (crosshairInsideProjectedBox(target.x, target.y, target.z, 0.45F, 1.8F) && dot >= 0.0F) {
+    const BulletHitResult hit =
+        BulletRules::ResolveFirstHit(state, state.camera.x, state.camera.y, state.camera.z, dirX, dirY, dirZ, kHitDistance);
+    if (hit.kind == BulletHitKind::WorldObject) {
+        WorldObject& object = state.worldObjects[static_cast<size_t>(hit.index)];
+        if (crosshairInsideProjectedBox(object.x, object.y, object.z, object.collisionRadius, 1.6F)) {
+            object.hitFlashSeconds = kObjectHitFlashSeconds;
+            state.worldRules.lastInteraction = object.shootThrough ? "Impact: penetrable object hit." :
+                                                                  "Impact: world object blocks the shot.";
+            return;
+        }
+    }
+    if (hit.kind == BulletHitKind::Target) {
+        TargetState& target = state.targets[static_cast<size_t>(hit.index)];
+        if (crosshairInsideProjectedBox(target.x, target.y, target.z, 0.45F, 1.8F)) {
             target.alive = false;
             target.hitFlashSeconds = kHitFlashSeconds;
             state.combat.targetsHit += 1;
             state.weapon.shotsHit += 1;
-            return;
-        }
-    }
-
-    for (WorldObject& object : state.worldObjects) {
-        const float dx = object.x - state.camera.x;
-        const float dy = object.y - state.camera.y;
-        const float dz = object.z - state.camera.z;
-        const float distSq = dx * dx + dy * dy + dz * dz;
-        if (distSq > kHitDistance * kHitDistance) continue;
-        const float invDist = 1.0F / std::sqrt(distSq);
-        const float dot = dirX * (dx * invDist) + dirY * (dy * invDist) + dirZ * (dz * invDist);
-        if (crosshairInsideProjectedBox(object.x, object.y, object.z, object.collisionRadius, 1.6F) && dot >= 0.0F) {
-            object.hitFlashSeconds = kObjectHitFlashSeconds;
-            state.worldRules.lastInteraction = "Impact: world object is solid (not a combat target).";
             return;
         }
     }

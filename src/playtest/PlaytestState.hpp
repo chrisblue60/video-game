@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "core/WorldClock.hpp"
+#include "playtest/WorldProperties.hpp"
 
 struct CameraState {
     float x = 0.0F;
@@ -59,7 +60,9 @@ struct WorldObject {
     float interactionRadius = 2.0F;
     float collisionRadius = 0.9F;
     InteractionType interaction = InteractionType::None;
+    bool shootThrough = false; // Backward-compatible mirror of properties.combat.shootThrough.
     float hitFlashSeconds = 0.0F;
+    WorldEntityProperties properties{};
 };
 
 struct WorldRulesState {

@@ -15,6 +15,7 @@
 #endif
 
 #if HAVE_SDL
+#include <algorithm>
 #include <cmath>
 #include <sstream>
 #include <string>

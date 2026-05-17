@@ -155,7 +155,7 @@ void ResolveHitscan(PlaytestState& state) {
         const float toTargetY = dy * invDist;
         const float toTargetZ = dz * invDist;
         const float dot = dirX * toTargetX + dirY * toTargetY + dirZ * toTargetZ;
-        if (dot >= kHitCosThreshold && crosshairInsideProjectedBox(target.x, target.y, target.z, 0.23F, 1.8F)) {
+        if (dot >= kHitCosThreshold && crosshairInsideProjectedBox(target.x, target.y, target.z, 0.45F, 1.8F)) {
             target.alive = false;
             target.hitFlashSeconds = kHitFlashSeconds;
             state.combat.targetsHit += 1;

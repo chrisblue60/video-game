@@ -63,10 +63,10 @@ float AccuracyPercent(const PlaytestState& state) {
     return (100.0f * static_cast<float>(state.weapon.shotsHit)) / static_cast<float>(state.weapon.shotsFired);
 }
 void DrawProjectedQuad(SDL_Renderer* renderer, const PlaytestState& state, float x, float y, float z, float halfW, float h) {
-    const ScreenPoint p1 = VisualRules::ProjectPoint(state, kWidth, kHeight, x - halfW, y + h, z);
-    const ScreenPoint p2 = VisualRules::ProjectPoint(state, kWidth, kHeight, x + halfW, y + h, z);
-    const ScreenPoint p3 = VisualRules::ProjectPoint(state, kWidth, kHeight, x + halfW, y, z);
-    const ScreenPoint p4 = VisualRules::ProjectPoint(state, kWidth, kHeight, x - halfW, y, z);
+    const ScreenPoint p1 = VisualRules::ProjectPointClamped(state, kWidth, kHeight, x - halfW, y + h, z, 0.22F);
+    const ScreenPoint p2 = VisualRules::ProjectPointClamped(state, kWidth, kHeight, x + halfW, y + h, z, 0.22F);
+    const ScreenPoint p3 = VisualRules::ProjectPointClamped(state, kWidth, kHeight, x + halfW, y, z, 0.22F);
+    const ScreenPoint p4 = VisualRules::ProjectPointClamped(state, kWidth, kHeight, x - halfW, y, z, 0.22F);
     if (!p1.visible || !p2.visible || !p3.visible || !p4.visible) return;
 
     SDL_RenderDrawLine(renderer, p1.x, p1.y, p2.x, p2.y);
@@ -92,7 +92,7 @@ void RenderGrid(SDL_Renderer* renderer, const PlaytestState& state, int horizon)
 
 void RenderTargets(SDL_Renderer* renderer, const PlaytestState& state) {
     for (const auto& target : state.targets) {
-        const ScreenPoint basePoint = VisualRules::ProjectPoint(state, kWidth, kHeight, target.x, target.y, target.z);
+        const ScreenPoint basePoint = VisualRules::ProjectPointClamped(state, kWidth, kHeight, target.x, target.y, target.z, 0.22F);
         if (!basePoint.visible) {
             continue;
         }
@@ -110,13 +110,13 @@ void RenderTargets(SDL_Renderer* renderer, const PlaytestState& state) {
         } else {
             SDL_SetRenderDrawColor(renderer, 240, 70, 70, 255);
         }
-        DrawProjectedQuad(renderer, state, target.x, target.y, target.z, 0.23f, 1.8f);
+        DrawProjectedQuad(renderer, state, target.x, target.y, target.z, 0.45f, 1.8f);
 
         // Drop shadow: farther targets cast lighter/smaller shadows to help depth reading.
         const int shadowAlpha = static_cast<int>(std::clamp(180.0f - depth * 8.0f, 40.0f, 180.0f));
         SDL_SetRenderDrawColor(renderer, 20, 20, 20, shadowAlpha);
-        const ScreenPoint shL = VisualRules::ProjectPoint(state, kWidth, kHeight, target.x - 0.35f, 0.02f, target.z);
-        const ScreenPoint shR = VisualRules::ProjectPoint(state, kWidth, kHeight, target.x + 0.35f, 0.02f, target.z);
+        const ScreenPoint shL = VisualRules::ProjectPointClamped(state, kWidth, kHeight, target.x - 0.45f, 0.02f, target.z, 0.22F);
+        const ScreenPoint shR = VisualRules::ProjectPointClamped(state, kWidth, kHeight, target.x + 0.45f, 0.02f, target.z, 0.22F);
         if (shL.visible && shR.visible) {
             SDL_RenderDrawLine(renderer, shL.x, shL.y, shR.x, shR.y);
             SDL_RenderDrawLine(renderer, shL.x, shL.y + 1, shR.x, shR.y + 1);
@@ -130,11 +130,11 @@ void RenderTargets(SDL_Renderer* renderer, const PlaytestState& state) {
 
 void RenderWorldObjects(SDL_Renderer* renderer, const PlaytestState& state) {
     for (const auto& object : state.worldObjects) {
-        const ScreenPoint point = VisualRules::ProjectPoint(state, kWidth, kHeight, object.x, object.y, object.z);
+        const ScreenPoint point = VisualRules::ProjectPointClamped(state, kWidth, kHeight, object.x, object.y, object.z, 0.22F);
         if (!point.visible) continue;
         const float depth = VisualRules::CameraDepth(state, object.x, object.z);
         const float scale = VisualRules::PerspectiveScale(depth);
-        const int markerHalf = static_cast<int>(10.0f * scale);
+        const int markerHalf = static_cast<int>(std::max(8.0f, object.collisionRadius * 22.0f * scale));
         const float dx = state.player.x - object.x;
         const float dz = state.player.z - object.z;
         const float d2 = dx * dx + dz * dz;
@@ -152,6 +152,7 @@ void RenderWorldObjects(SDL_Renderer* renderer, const PlaytestState& state) {
         }
         SDL_Rect marker{point.x - markerHalf, point.y - markerHalf * 2, markerHalf * 2, markerHalf * 2};
         SDL_RenderDrawRect(renderer, &marker);
+        DrawProjectedQuad(renderer, state, object.x, object.y, object.z, object.collisionRadius, 1.6F);
     }
 }
 

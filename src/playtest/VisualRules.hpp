@@ -23,4 +23,6 @@ public:
     static ScreenPoint ProjectPoint(const PlaytestState& state, int screenWidth, int screenHeight, float worldX, float worldY,
                                     float worldZ, const VisualScaleRules& rules = {});
     static float PerspectiveScale(float depth, const VisualScaleRules& rules = {});
+    static ScreenPoint ProjectPointClamped(const PlaytestState& state, int screenWidth, int screenHeight, float worldX, float worldY,
+                                           float worldZ, float clampDepth, const VisualScaleRules& rules = {});
 };

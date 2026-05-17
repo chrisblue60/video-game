@@ -85,6 +85,29 @@ bool ProjectPoint(const PlaytestState& state, float wx, float wy, float wz, int&
     return sx >= -50 && sx <= kWidth + 50 && sy >= -50 && sy <= kHeight + 50;
 }
 
+float CameraSpaceDepth(const PlaytestState& state, float wx, float wz) {
+    constexpr float pi = 3.14159265358979323846f;
+    const float yaw = state.camera.yawDeg * pi / 180.0f;
+    const float dx = wx - state.camera.x;
+    const float dz = wz - state.camera.z;
+    const float syaw = std::sin(yaw);
+    const float cy = std::cos(yaw);
+    return syaw * dx + cy * dz;
+}
+
+void DrawProjectedQuad(SDL_Renderer* renderer, const PlaytestState& state, float x, float y, float z, float halfW, float h) {
+    int sx1 = 0, sy1 = 0, sx2 = 0, sy2 = 0, sx3 = 0, sy3 = 0, sx4 = 0, sy4 = 0;
+    if (!ProjectPoint(state, x - halfW, y + h, z, sx1, sy1)) return;
+    if (!ProjectPoint(state, x + halfW, y + h, z, sx2, sy2)) return;
+    if (!ProjectPoint(state, x + halfW, y, z, sx3, sy3)) return;
+    if (!ProjectPoint(state, x - halfW, y, z, sx4, sy4)) return;
+
+    SDL_RenderDrawLine(renderer, sx1, sy1, sx2, sy2);
+    SDL_RenderDrawLine(renderer, sx2, sy2, sx3, sy3);
+    SDL_RenderDrawLine(renderer, sx3, sy3, sx4, sy4);
+    SDL_RenderDrawLine(renderer, sx4, sy4, sx1, sy1);
+}
+
 void RenderGrid(SDL_Renderer* renderer, const PlaytestState& state, int horizon) {
     SDL_SetRenderDrawColor(renderer, 80, 80, 80, 255);
 
@@ -102,24 +125,40 @@ void RenderGrid(SDL_Renderer* renderer, const PlaytestState& state, int horizon)
 
 void RenderTargets(SDL_Renderer* renderer, const PlaytestState& state) {
     for (const auto& target : state.targets) {
-        int sx = 0;
-        int sy = 0;
-        if (!ProjectPoint(state, target.x, target.y, target.z, sx, sy)) {
+        int baseSx = 0;
+        int baseSy = 0;
+        if (!ProjectPoint(state, target.x, target.y, target.z, baseSx, baseSy)) {
             continue;
         }
+        const float depth = CameraSpaceDepth(state, target.x, target.z);
+        if (depth <= 0.1f) continue;
+        const float scale = std::clamp(14.0f / (depth + 0.5f), 0.35f, 2.8f);
+        const int halfW = static_cast<int>(8.0f * scale);
+        const int height = static_cast<int>(32.0f * scale);
 
         if (!target.alive) {
             if (target.hitFlashSeconds <= 0.0f) {
                 continue;
             }
-            SDL_SetRenderDrawColor(renderer, 255, 230, 80, 255);
+            SDL_SetRenderDrawColor(renderer, 255, 220, 90, 255);
         } else {
-            SDL_SetRenderDrawColor(renderer, 255, 60, 60, 255);
+            SDL_SetRenderDrawColor(renderer, 240, 70, 70, 255);
+        }
+        DrawProjectedQuad(renderer, state, target.x, target.y, target.z, 0.23f, 1.8f);
+
+        // Drop shadow: farther targets cast lighter/smaller shadows to help depth reading.
+        const int shadowAlpha = static_cast<int>(std::clamp(180.0f - depth * 8.0f, 40.0f, 180.0f));
+        SDL_SetRenderDrawColor(renderer, 20, 20, 20, shadowAlpha);
+        int shLx = 0, shLy = 0, shRx = 0, shRy = 0;
+        if (ProjectPoint(state, target.x - 0.35f, 0.02f, target.z, shLx, shLy) &&
+            ProjectPoint(state, target.x + 0.35f, 0.02f, target.z, shRx, shRy)) {
+            SDL_RenderDrawLine(renderer, shLx, shLy, shRx, shRy);
+            SDL_RenderDrawLine(renderer, shLx, shLy + 1, shRx, shRy + 1);
         }
 
-        SDL_Rect r{sx - 8, sy - 16, 16, 32};
-        SDL_RenderDrawRect(renderer, &r);
-        SDL_RenderDrawLine(renderer, sx - 10, sy, sx + 10, sy);
+        // Center marker scales with distance.
+        SDL_SetRenderDrawColor(renderer, 255, 245, 210, 255);
+        SDL_RenderDrawLine(renderer, baseSx - halfW, baseSy - height / 2, baseSx + halfW, baseSy - height / 2);
     }
 }
 
@@ -184,6 +223,11 @@ void RenderScene(SDL_Renderer* renderer, const PlaytestState& state) {
     SDL_SetRenderDrawColor(renderer, 35, 120, 35, 255);
     SDL_Rect ground{0, horizon, kWidth, kHeight - horizon};
     SDL_RenderFillRect(renderer, &ground);
+
+    // Soft horizon haze for better scale and space cues.
+    SDL_SetRenderDrawColor(renderer, 180, 200, 220, state.clock.IsNight() ? 30 : 55);
+    SDL_Rect haze{0, horizon - 18, kWidth, 46};
+    SDL_RenderFillRect(renderer, &haze);
 
     RenderGrid(renderer, state, horizon);
     RenderTargets(renderer, state);

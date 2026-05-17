@@ -121,8 +121,8 @@ void PlaytestSimulation::Step(PlaytestState& state, const PlaytestInput& input, 
         target.hitFlashSeconds = std::max(0.0F, target.hitFlashSeconds - dt);
     }
 
-    state.camera.yawDeg -= input.mouseDeltaX * kMouseSensitivity;
-    state.camera.pitchDeg += input.mouseDeltaY * kMouseSensitivity;
+    state.camera.yawDeg += input.mouseDeltaX * kMouseSensitivity;
+    state.camera.pitchDeg -= input.mouseDeltaY * kMouseSensitivity;
     state.camera.recoilPitchDeg = std::max(0.0F, state.camera.recoilPitchDeg - (kRecoilRecoverDegPerSec * dt));
     state.camera.pitchDeg = std::clamp(state.camera.pitchDeg, -89.0F, 89.0F);
 

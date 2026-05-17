@@ -61,8 +61,8 @@ bool ProjectPoint(const PlaytestState& state, float wx, float wy, float wz, int&
 
     const float cy = std::cos(yaw);
     const float syaw = std::sin(yaw);
-    const float x1 = cy * dx + syaw * dz;
-    const float z1 = -syaw * dx + cy * dz;
+    const float x1 = cy * dx - syaw * dz;
+    const float z1 = syaw * dx + cy * dz;
     const float y1 = dy;
 
     const float cp = std::cos(pitch);

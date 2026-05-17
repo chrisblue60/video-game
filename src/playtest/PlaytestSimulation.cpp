@@ -25,9 +25,9 @@ float DegToRad(float deg) { return deg * static_cast<float>(PI / 180.0); }
 
 void SeedTargets(PlaytestState& state) {
     state.targets.clear();
-    state.targets.push_back(TargetState{8.0F, 1.0F, 0.0F, true});
-    state.targets.push_back(TargetState{14.0F, 1.0F, 3.5F, true});
-    state.targets.push_back(TargetState{20.0F, 1.0F, -4.0F, true});
+    state.targets.push_back(TargetState{0.0F, 1.0F, 8.0F, true});
+    state.targets.push_back(TargetState{3.5F, 1.0F, 14.0F, true});
+    state.targets.push_back(TargetState{-4.0F, 1.0F, 20.0F, true});
 }
 
 void EnsureTargetsSeeded(PlaytestState& state) {
@@ -52,7 +52,6 @@ void ResetRound(PlaytestState& state) {
 bool FireWeapon(PlaytestState& state) {
     if (state.weapon.fireCooldownSeconds > 0.0F || state.weapon.ammoInMag <= 0) return false;
     state.weapon.ammoInMag -= 1;
-    state.camera.recoilPitchDeg += kRecoilKickDeg;
     state.weapon.shotsFired += 1;
     state.weapon.fireCooldownSeconds = kFireIntervalSeconds;
     return true;
@@ -60,10 +59,10 @@ bool FireWeapon(PlaytestState& state) {
 
 void ResolveHitscan(PlaytestState& state) {
     const float yawRad = DegToRad(state.camera.yawDeg);
-    const float pitchRad = DegToRad(state.camera.pitchDeg - state.camera.recoilPitchDeg);
-    const float dirX = std::cos(yawRad) * std::cos(pitchRad);
+    const float pitchRad = DegToRad(state.camera.pitchDeg + state.camera.recoilPitchDeg);
+    const float dirX = std::sin(yawRad) * std::cos(pitchRad);
     const float dirY = -std::sin(pitchRad);
-    const float dirZ = std::sin(yawRad) * std::cos(pitchRad);
+    const float dirZ = std::cos(yawRad) * std::cos(pitchRad);
 
     for (TargetState& target : state.targets) {
         if (!target.alive) continue;
@@ -95,7 +94,10 @@ void UpdateWeapon(PlaytestState& state, const PlaytestInput& input, float dt) {
         state.weapon.ammoInMag += load;
         state.weapon.reserveAmmo -= load;
     }
-    if (input.fire && FireWeapon(state)) ResolveHitscan(state);
+    if (input.fire && FireWeapon(state)) {
+        ResolveHitscan(state);
+        state.camera.recoilPitchDeg += kRecoilKickDeg;
+    }
 }
 
 void UpdateRoundProgress(PlaytestState& state, float dt) {
@@ -119,8 +121,8 @@ void PlaytestSimulation::Step(PlaytestState& state, const PlaytestInput& input, 
         target.hitFlashSeconds = std::max(0.0F, target.hitFlashSeconds - dt);
     }
 
-    state.camera.yawDeg += input.mouseDeltaX * kMouseSensitivity;
-    state.camera.pitchDeg -= input.mouseDeltaY * kMouseSensitivity;
+    state.camera.yawDeg -= input.mouseDeltaX * kMouseSensitivity;
+    state.camera.pitchDeg += input.mouseDeltaY * kMouseSensitivity;
     state.camera.recoilPitchDeg = std::max(0.0F, state.camera.recoilPitchDeg - (kRecoilRecoverDegPerSec * dt));
     state.camera.pitchDeg = std::clamp(state.camera.pitchDeg, -89.0F, 89.0F);
 
@@ -132,8 +134,8 @@ void PlaytestSimulation::Step(PlaytestState& state, const PlaytestInput& input, 
 
     const float speed = input.sprint ? kSprintSpeed : kWalkSpeed;
     const float yawRad = DegToRad(state.camera.yawDeg);
-    const float forwardX = std::cos(yawRad), forwardZ = std::sin(yawRad);
-    const float rightX = -forwardZ, rightZ = forwardX;
+    const float forwardX = std::sin(yawRad), forwardZ = std::cos(yawRad);
+    const float rightX = std::cos(yawRad), rightZ = -std::sin(yawRad);
     state.player.vx = (forwardX * moveForward + rightX * moveRight) * speed;
     state.player.vz = (forwardZ * moveForward + rightZ * moveRight) * speed;
 

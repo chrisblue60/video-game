@@ -54,7 +54,7 @@ int AliveTargets(const PlaytestState& state) {
 bool ProjectPoint(const PlaytestState& state, float wx, float wy, float wz, int& sx, int& sy) {
     constexpr float pi = 3.14159265358979323846f;
     const float yaw = state.camera.yawDeg * pi / 180.0f;
-    const float pitch = (state.camera.pitchDeg - state.camera.recoilPitchDeg) * pi / 180.0f;
+    const float pitch = (state.camera.pitchDeg + state.camera.recoilPitchDeg) * pi / 180.0f;
     const float dx = wx - state.camera.x;
     const float dy = wy - state.camera.y;
     const float dz = wz - state.camera.z;
@@ -118,7 +118,7 @@ void RenderTargets(SDL_Renderer* renderer, const PlaytestState& state) {
 }
 
 void RenderScene(SDL_Renderer* renderer, const PlaytestState& state) {
-    const int horizon = static_cast<int>(kHeight * 0.5f + (state.camera.pitchDeg - state.camera.recoilPitchDeg) * 2.2f);
+    const int horizon = static_cast<int>(kHeight * 0.5f - (state.camera.pitchDeg + state.camera.recoilPitchDeg) * 2.2f);
 
     SDL_SetRenderDrawColor(renderer, state.clock.IsNight() ? 15 : 80, state.clock.IsNight() ? 18 : 130,
                            state.clock.IsNight() ? 30 : 190, 255);

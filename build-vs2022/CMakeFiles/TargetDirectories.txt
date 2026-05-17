@@ -1,0 +1,10 @@
+C:/Users/chris/OneDrive/Documents/GitHub/video-game/build-vs2022/CMakeFiles/engine_prototype.dir
+C:/Users/chris/OneDrive/Documents/GitHub/video-game/build-vs2022/CMakeFiles/world_clock_tests.dir
+C:/Users/chris/OneDrive/Documents/GitHub/video-game/build-vs2022/CMakeFiles/engine_config_loader_tests.dir
+C:/Users/chris/OneDrive/Documents/GitHub/video-game/build-vs2022/CMakeFiles/subsystem_pipeline_tests.dir
+C:/Users/chris/OneDrive/Documents/GitHub/video-game/build-vs2022/CMakeFiles/world_tests.dir
+C:/Users/chris/OneDrive/Documents/GitHub/video-game/build-vs2022/CMakeFiles/engine_playtest.dir
+C:/Users/chris/OneDrive/Documents/GitHub/video-game/build-vs2022/CMakeFiles/playtest_simulation_tests.dir
+C:/Users/chris/OneDrive/Documents/GitHub/video-game/build-vs2022/CMakeFiles/RUN_TESTS.dir
+C:/Users/chris/OneDrive/Documents/GitHub/video-game/build-vs2022/CMakeFiles/ALL_BUILD.dir
+C:/Users/chris/OneDrive/Documents/GitHub/video-game/build-vs2022/CMakeFiles/ZERO_CHECK.dir

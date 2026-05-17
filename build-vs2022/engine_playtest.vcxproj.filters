@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\playtest\main_playtest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\playtest\PlaytestApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\playtest\PlaytestSimulation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\WorldClock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{AB7AA3D8-6782-34D4-A884-E4647558A629}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

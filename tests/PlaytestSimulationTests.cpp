@@ -20,6 +20,7 @@ int main() {
     { PlaytestState s{}; double st=s.clock.TimeOfDayHours(); PlaytestInput i{}; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(!(s.clock.TimeOfDayHours()>st)) return Fail("clock"); }
     { PlaytestState s{}; PlaytestInput i{}; i.mouseDeltaY=99999.0F; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(!NearlyEqual(s.camera.pitchDeg,-89.0F,1e-3F)) return Fail("pitch"); }
     { PlaytestState s{}; PlaytestInput i{}; i.fire=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.weapon.ammoInMag!=29||s.weapon.shotsFired!=1) return Fail("fire"); if(s.weapon.shotsHit!=1) return Fail("shotsHit"); }
+    { PlaytestState s{}; s.camera.yawDeg=5.0F; PlaytestInput i{}; i.fire=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.weapon.shotsHit!=0) return Fail("precise miss outside projected hitbox"); }
     { PlaytestState s{}; s.weapon.ammoInMag=5; s.weapon.reserveAmmo=10; PlaytestInput i{}; i.reload=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.weapon.ammoInMag!=15||s.weapon.reserveAmmo!=0) return Fail("reload"); }
     { PlaytestState s{}; PlaytestInput i{}; i.fire=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.combat.targetsHit<1) return Fail("hitscan"); }
     { PlaytestState s{}; PlaytestInput i{}; i.resetRound=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.targets.size()!=3) return Fail("reset spawns targets"); }

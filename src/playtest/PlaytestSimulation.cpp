@@ -1,4 +1,5 @@
 #include "playtest/PlaytestSimulation.hpp"
+#include "playtest/VisualRules.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -21,6 +22,8 @@ constexpr float kRecoilRecoverDegPerSec = 7.0F;
 constexpr float kObjectHitFlashSeconds = 0.18F;
 constexpr float kPlayerCollisionRadius = 0.45F;
 constexpr float kWorldBounds = 24.0F;
+constexpr int kScreenWidth = 1280;
+constexpr int kScreenHeight = 720;
 
 constexpr double PI = 3.14159265358979323846;
 
@@ -124,6 +127,21 @@ void ResolveHitscan(PlaytestState& state) {
     const float dirY = -std::sin(pitchRad);
     const float dirZ = std::cos(yawRad) * std::cos(pitchRad);
 
+    auto crosshairInsideProjectedBox = [&](float cx, float baseY, float cz, float halfW, float h) {
+        const ScreenPoint p1 = VisualRules::ProjectPoint(state, kScreenWidth, kScreenHeight, cx - halfW, baseY + h, cz);
+        const ScreenPoint p2 = VisualRules::ProjectPoint(state, kScreenWidth, kScreenHeight, cx + halfW, baseY + h, cz);
+        const ScreenPoint p3 = VisualRules::ProjectPoint(state, kScreenWidth, kScreenHeight, cx + halfW, baseY, cz);
+        const ScreenPoint p4 = VisualRules::ProjectPoint(state, kScreenWidth, kScreenHeight, cx - halfW, baseY, cz);
+        if (!p1.visible || !p2.visible || !p3.visible || !p4.visible) return false;
+        const int minX = std::min(std::min(p1.x, p2.x), std::min(p3.x, p4.x));
+        const int maxX = std::max(std::max(p1.x, p2.x), std::max(p3.x, p4.x));
+        const int minY = std::min(std::min(p1.y, p2.y), std::min(p3.y, p4.y));
+        const int maxY = std::max(std::max(p1.y, p2.y), std::max(p3.y, p4.y));
+        const int cxScreen = kScreenWidth / 2;
+        const int cyScreen = kScreenHeight / 2;
+        return cxScreen >= minX && cxScreen <= maxX && cyScreen >= minY && cyScreen <= maxY;
+    };
+
     for (TargetState& target : state.targets) {
         if (!target.alive) continue;
         const float dx = target.x - state.camera.x;
@@ -137,7 +155,7 @@ void ResolveHitscan(PlaytestState& state) {
         const float toTargetY = dy * invDist;
         const float toTargetZ = dz * invDist;
         const float dot = dirX * toTargetX + dirY * toTargetY + dirZ * toTargetZ;
-        if (dot >= kHitCosThreshold) {
+        if (dot >= kHitCosThreshold && crosshairInsideProjectedBox(target.x, target.y, target.z, 0.23F, 1.8F)) {
             target.alive = false;
             target.hitFlashSeconds = kHitFlashSeconds;
             state.combat.targetsHit += 1;
@@ -154,7 +172,7 @@ void ResolveHitscan(PlaytestState& state) {
         if (distSq > kHitDistance * kHitDistance) continue;
         const float invDist = 1.0F / std::sqrt(distSq);
         const float dot = dirX * (dx * invDist) + dirY * (dy * invDist) + dirZ * (dz * invDist);
-        if (dot >= kHitCosThreshold) {
+        if (dot >= kHitCosThreshold && crosshairInsideProjectedBox(object.x, object.y, object.z, object.collisionRadius, 1.6F)) {
             object.hitFlashSeconds = kObjectHitFlashSeconds;
             state.worldRules.lastInteraction = "Impact: world object is solid (not a combat target).";
             return;

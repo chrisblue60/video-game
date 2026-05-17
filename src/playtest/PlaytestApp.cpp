@@ -43,53 +43,74 @@ PlaytestInput BuildInput(const Uint8* keys, float mouseDx, float mouseDy) {
 
 int AliveTargets(const PlaytestState& state) {
     int alive = 0;
-    for (const auto& target : state.targets) if (target.alive) ++alive;
+    for (const auto& target : state.targets) {
+        if (target.alive) {
+            ++alive;
+        }
+    }
     return alive;
 }
 
 bool ProjectPoint(const PlaytestState& state, float wx, float wy, float wz, int& sx, int& sy) {
-    const float yaw = (state.camera.yawDeg) * 3.14159265358979323846f / 180.0f;
-    const float pitch = (state.camera.pitchDeg - state.camera.recoilPitchDeg) * 3.14159265358979323846f / 180.0f;
+    constexpr float pi = 3.14159265358979323846f;
+    const float yaw = state.camera.yawDeg * pi / 180.0f;
+    const float pitch = (state.camera.pitchDeg - state.camera.recoilPitchDeg) * pi / 180.0f;
     const float dx = wx - state.camera.x;
     const float dy = wy - state.camera.y;
     const float dz = wz - state.camera.z;
 
-    const float cy = std::cos(yaw), syaw = std::sin(yaw);
-    float x1 = cy * dx + syaw * dz;
-    float z1 = -syaw * dx + cy * dz;
-    float y1 = dy;
+    const float cy = std::cos(yaw);
+    const float syaw = std::sin(yaw);
+    const float x1 = cy * dx + syaw * dz;
+    const float z1 = -syaw * dx + cy * dz;
+    const float y1 = dy;
 
-    const float cp = std::cos(pitch), sp = std::sin(pitch);
-    float y2 = cp * y1 - sp * z1;
-    float z2 = sp * y1 + cp * z1;
-    if (z2 <= 0.1f) return false;
+    const float cp = std::cos(pitch);
+    const float sp = std::sin(pitch);
+    const float y2 = cp * y1 - sp * z1;
+    const float z2 = sp * y1 + cp * z1;
+    if (z2 <= 0.1f) {
+        return false;
+    }
 
-    const float f = 550.0f;
-    sx = static_cast<int>(kWidth * 0.5f + (x1 / z2) * f);
-    sy = static_cast<int>(kHeight * 0.5f - (y2 / z2) * f);
+    const float focal = 550.0f;
+    sx = static_cast<int>(kWidth * 0.5f + (x1 / z2) * focal);
+    sy = static_cast<int>(kHeight * 0.5f - (y2 / z2) * focal);
     return sx >= -50 && sx <= kWidth + 50 && sy >= -50 && sy <= kHeight + 50;
 }
 
-void RenderGrid(SDL_Renderer* renderer, const PlaytestState& state) {
+void RenderGrid(SDL_Renderer* renderer, const PlaytestState& state, int horizon) {
     SDL_SetRenderDrawColor(renderer, 80, 80, 80, 255);
-    const int horizon = static_cast<int>(kHeight * 0.5f + (state.camera.pitchDeg - state.camera.recoilPitchDeg) * 2.2f);
+
+    const float lateral = std::fmod(state.player.x * 35.0f, 80.0f);
+    for (int x = -80; x <= kWidth + 80; x += 80) {
+        SDL_RenderDrawLine(renderer, static_cast<int>(x + lateral), horizon, kWidth / 2, kHeight);
+    }
+
     for (int i = 1; i <= 16; ++i) {
-        float z = i * 3.0f + std::fmod(state.player.z, 3.0f);
-        int y = horizon + static_cast<int>(4200.0f / (z + 8.0f));
+        const float z = i * 3.0f + std::fmod(state.player.z, 3.0f);
+        const int y = horizon + static_cast<int>(4200.0f / (z + 8.0f));
         SDL_RenderDrawLine(renderer, 0, y, kWidth, y);
     }
 }
 
 void RenderTargets(SDL_Renderer* renderer, const PlaytestState& state) {
-    for (const auto& t : state.targets) {
-        int sx, sy;
-        if (!ProjectPoint(state, t.x, t.y, t.z, sx, sy)) continue;
-        if (!t.alive) {
-            if (t.hitFlashSeconds <= 0.0f) continue;
+    for (const auto& target : state.targets) {
+        int sx = 0;
+        int sy = 0;
+        if (!ProjectPoint(state, target.x, target.y, target.z, sx, sy)) {
+            continue;
+        }
+
+        if (!target.alive) {
+            if (target.hitFlashSeconds <= 0.0f) {
+                continue;
+            }
             SDL_SetRenderDrawColor(renderer, 255, 230, 80, 255);
         } else {
             SDL_SetRenderDrawColor(renderer, 255, 60, 60, 255);
         }
+
         SDL_Rect r{sx - 8, sy - 16, 16, 32};
         SDL_RenderDrawRect(renderer, &r);
         SDL_RenderDrawLine(renderer, sx - 10, sy, sx + 10, sy);
@@ -98,14 +119,16 @@ void RenderTargets(SDL_Renderer* renderer, const PlaytestState& state) {
 
 void RenderScene(SDL_Renderer* renderer, const PlaytestState& state) {
     const int horizon = static_cast<int>(kHeight * 0.5f + (state.camera.pitchDeg - state.camera.recoilPitchDeg) * 2.2f);
+
     SDL_SetRenderDrawColor(renderer, state.clock.IsNight() ? 15 : 80, state.clock.IsNight() ? 18 : 130,
                            state.clock.IsNight() ? 30 : 190, 255);
     SDL_RenderClear(renderer);
+
     SDL_SetRenderDrawColor(renderer, 35, 120, 35, 255);
     SDL_Rect ground{0, horizon, kWidth, kHeight - horizon};
     SDL_RenderFillRect(renderer, &ground);
 
-    RenderGrid(renderer, state);
+    RenderGrid(renderer, state, horizon);
     RenderTargets(renderer, state);
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -119,6 +142,8 @@ void RenderScene(SDL_Renderer* renderer, const PlaytestState& state) {
           << " Ammo=" << state.weapon.ammoInMag << "/" << state.weapon.reserveAmmo
           << " Hits=" << state.combat.targetsHit
           << " Alive=" << AliveTargets(state)
+          << " Round=" << state.combat.roundTimeSeconds
+          << " Best=" << state.combat.bestRoundSeconds
           << " Recoil=" << state.camera.recoilPitchDeg;
 #if SDL_VER == 3
     SDL_SetWindowTitle(SDL_GetRenderWindow(renderer), title.str().c_str());
@@ -126,6 +151,7 @@ void RenderScene(SDL_Renderer* renderer, const PlaytestState& state) {
     SDL_Window* window = SDL_RenderGetWindow(renderer);
     SDL_SetWindowTitle(window, title.str().c_str());
 #endif
+
     SDL_RenderPresent(renderer);
 }
 }  // namespace
@@ -136,15 +162,23 @@ int PlaytestApp::Run() {
     std::cerr << "SDL headers not found. Install SDL2 or SDL3 development package to run playtest mode.\n";
     return 1;
 #else
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) return 1;
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
+        return 1;
+    }
+
 #if SDL_VER == 3
     SDL_Window* window = SDL_CreateWindow("Playtest", kWidth, kHeight, 0);
     SDL_Renderer* renderer = window ? SDL_CreateRenderer(window, nullptr) : nullptr;
 #else
-    SDL_Window* window = SDL_CreateWindow("Playtest", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, kWidth, kHeight, SDL_WINDOW_SHOWN);
+    SDL_Window* window = SDL_CreateWindow("Playtest", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                          kWidth, kHeight, SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = window ? SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED) : nullptr;
 #endif
-    if (!window || !renderer) return 1;
+
+    if (!window || !renderer) {
+        return 1;
+    }
+
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
     PlaytestState state{};
@@ -152,25 +186,33 @@ int PlaytestApp::Run() {
 
     bool running = true;
     while (running) {
-        float mouseDx = 0.0F, mouseDy = 0.0F;
+        float mouseDx = 0.0f;
+        float mouseDy = 0.0f;
+
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
 #if SDL_VER == 3
-            if (event.type == SDL_EVENT_QUIT) running = false;
-            else if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) running = false;
-            else if (event.type == SDL_EVENT_MOUSE_MOTION) {
+            if (event.type == SDL_EVENT_QUIT) {
+                running = false;
+            } else if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) {
+                running = false;
+            } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
 #else
-            if (event.type == SDL_QUIT) running = false;
-            else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) running = false;
-            else if (event.type == SDL_MOUSEMOTION) {
+            if (event.type == SDL_QUIT) {
+                running = false;
+            } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+                running = false;
+            } else if (event.type == SDL_MOUSEMOTION) {
 #endif
                 mouseDx += static_cast<float>(event.motion.xrel);
                 mouseDy += static_cast<float>(event.motion.yrel);
             }
         }
+
         const Uint8* keys = SDL_GetKeyboardState(nullptr);
         PlaytestInput input = BuildInput(keys, mouseDx, mouseDy);
         PlaytestSimulation::Step(state, input, kFixedDt);
+
         RenderScene(renderer, state);
 #if SDL_VER == 3
         SDL_DelayNS(16 * 1000 * 1000);
@@ -178,6 +220,7 @@ int PlaytestApp::Run() {
         SDL_Delay(16);
 #endif
     }
+
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

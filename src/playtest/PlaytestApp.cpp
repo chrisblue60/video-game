@@ -17,6 +17,7 @@
 #if HAVE_SDL
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <sstream>
 #include <string>
 
@@ -134,7 +135,15 @@ void RenderWorldObjects(SDL_Renderer* renderer, const PlaytestState& state) {
         const float depth = VisualRules::CameraDepth(state, object.x, object.z);
         const float scale = VisualRules::PerspectiveScale(depth);
         const int markerHalf = static_cast<int>(10.0f * scale);
-        if (object.interaction == InteractionType::LibraryTerminal) {
+        const float dx = state.player.x - object.x;
+        const float dz = state.player.z - object.z;
+        const float d2 = dx * dx + dz * dz;
+        const bool inRange = d2 <= object.interactionRadius * object.interactionRadius;
+        if (object.hitFlashSeconds > 0.0f) {
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        } else if (inRange) {
+            SDL_SetRenderDrawColor(renderer, 90, 255, 120, 255);
+        } else if (object.interaction == InteractionType::LibraryTerminal) {
             SDL_SetRenderDrawColor(renderer, 90, 170, 255, 255);
         } else if (object.interaction == InteractionType::BuildParcel) {
             SDL_SetRenderDrawColor(renderer, 255, 180, 80, 255);
@@ -204,6 +213,10 @@ void DrawHudOverlay(SDL_Renderer* renderer, const PlaytestState& state) {
     SDL_Rect parcelState{230, 126, state.worldRules.inBuildParcel ? 36 : 18, 12};
     SDL_RenderFillRect(renderer, &parcelState);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+    // last interaction indicator bar (non-text fallback)
+    SDL_Rect msg{30, 150, std::min(360, static_cast<int>(std::strlen(state.worldRules.lastInteraction) * 3)), 6};
+    SDL_RenderFillRect(renderer, &msg);
 }
 
 void RenderScene(SDL_Renderer* renderer, const PlaytestState& state) {

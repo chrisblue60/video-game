@@ -27,6 +27,7 @@ int main() {
     { PlaytestState s{}; s.player.x=6.0F; s.player.z=10.0F; PlaytestInput i{}; i.placeStructure=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.worldRules.placedStructures!=1||s.worldRules.buildCredits!=3) return Fail("place structure in parcel"); }
     { PlaytestState s{}; PlaytestInput i{}; i.placeStructure=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(std::string(s.worldRules.lastInteraction).find("move into a build parcel")==std::string::npos) return Fail("prevent place outside parcel"); }
     { if(!(VisualRules::PerspectiveScale(4.0F) > VisualRules::PerspectiveScale(20.0F))) return Fail("perspective scale depth rule"); }
+    { PlaytestState s{}; PlaytestInput i{}; i.moveForward=true; for(int k=0;k<120;++k) PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.player.z>7.2F) return Fail("collision with target"); }
 
     std::cout << "[PASS] PlaytestSimulation tests\n";
     return 0;

@@ -18,6 +18,9 @@ constexpr float kHitCosThreshold = 0.98F;
 constexpr float kHitFlashSeconds = 0.15F;
 constexpr float kRecoilKickDeg = 1.3F;
 constexpr float kRecoilRecoverDegPerSec = 7.0F;
+constexpr float kObjectHitFlashSeconds = 0.18F;
+constexpr float kPlayerCollisionRadius = 0.45F;
+constexpr float kWorldBounds = 24.0F;
 
 constexpr double PI = 3.14159265358979323846;
 
@@ -36,8 +39,8 @@ void EnsureTargetsSeeded(PlaytestState& state) {
 
 void EnsureWorldSeeded(PlaytestState& state) {
     if (!state.worldObjects.empty()) return;
-    state.worldObjects.push_back(WorldObject{"Library Terminal", -6.0F, 0.9F, 12.0F, 2.2F, InteractionType::LibraryTerminal});
-    state.worldObjects.push_back(WorldObject{"Build Parcel A", 6.0F, 0.9F, 10.0F, 4.0F, InteractionType::BuildParcel});
+    state.worldObjects.push_back(WorldObject{"Library Terminal", -6.0F, 0.9F, 12.0F, 2.2F, 1.0F, InteractionType::LibraryTerminal});
+    state.worldObjects.push_back(WorldObject{"Build Parcel A", 6.0F, 0.9F, 10.0F, 4.0F, 1.2F, InteractionType::BuildParcel});
 }
 
 int CountAliveTargets(const PlaytestState& state) {
@@ -142,6 +145,51 @@ void ResolveHitscan(PlaytestState& state) {
             return;
         }
     }
+
+    for (WorldObject& object : state.worldObjects) {
+        const float dx = object.x - state.camera.x;
+        const float dy = object.y - state.camera.y;
+        const float dz = object.z - state.camera.z;
+        const float distSq = dx * dx + dy * dy + dz * dz;
+        if (distSq > kHitDistance * kHitDistance) continue;
+        const float invDist = 1.0F / std::sqrt(distSq);
+        const float dot = dirX * (dx * invDist) + dirY * (dy * invDist) + dirZ * (dz * invDist);
+        if (dot >= kHitCosThreshold) {
+            object.hitFlashSeconds = kObjectHitFlashSeconds;
+            state.worldRules.lastInteraction = "Impact: world object is solid (not a combat target).";
+            return;
+        }
+    }
+}
+
+void ResolvePlayerCollisions(PlaytestState& state) {
+    state.player.x = std::clamp(state.player.x, -kWorldBounds, kWorldBounds);
+    state.player.z = std::clamp(state.player.z, -kWorldBounds, kWorldBounds);
+
+    auto pushOut = [&](float ox, float oz, float obstacleRadius) {
+        const float dx = state.player.x - ox;
+        const float dz = state.player.z - oz;
+        const float minDist = kPlayerCollisionRadius + obstacleRadius;
+        const float distSq = dx * dx + dz * dz;
+        if (distSq >= minDist * minDist) return;
+        if (distSq < 0.000001F) {
+            state.player.x = ox + minDist;
+            return;
+        }
+        const float dist = std::sqrt(distSq);
+        const float nx = dx / dist;
+        const float nz = dz / dist;
+        state.player.x = ox + nx * minDist;
+        state.player.z = oz + nz * minDist;
+    };
+
+    for (const auto& object : state.worldObjects) {
+        pushOut(object.x, object.z, object.collisionRadius);
+    }
+    for (const auto& target : state.targets) {
+        if (!target.alive) continue;
+        pushOut(target.x, target.z, 0.45F);
+    }
 }
 
 void UpdateWeapon(PlaytestState& state, const PlaytestInput& input, float dt) {
@@ -179,6 +227,9 @@ void PlaytestSimulation::Step(PlaytestState& state, const PlaytestInput& input, 
     for (TargetState& target : state.targets) {
         target.hitFlashSeconds = std::max(0.0F, target.hitFlashSeconds - dt);
     }
+    for (WorldObject& object : state.worldObjects) {
+        object.hitFlashSeconds = std::max(0.0F, object.hitFlashSeconds - dt);
+    }
 
     state.camera.yawDeg += input.mouseDeltaX * kMouseSensitivity;
     state.camera.pitchDeg -= input.mouseDeltaY * kMouseSensitivity;
@@ -209,6 +260,7 @@ void PlaytestSimulation::Step(PlaytestState& state, const PlaytestInput& input, 
         state.player.y = kGroundY;
         state.player.vy = 0.0F;
     }
+    ResolvePlayerCollisions(state);
 
     state.camera.x = state.player.x;
     state.camera.y = state.player.y + 0.8F;

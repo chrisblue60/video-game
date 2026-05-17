@@ -57,7 +57,9 @@ struct WorldObject {
     float y = 0.0F;
     float z = 0.0F;
     float interactionRadius = 2.0F;
+    float collisionRadius = 0.9F;
     InteractionType interaction = InteractionType::None;
+    float hitFlashSeconds = 0.0F;
 };
 
 struct WorldRulesState {

@@ -1,0 +1,10 @@
+^C:\USERS\CHRIS\ONEDRIVE\DOCUMENTS\GITHUB\VIDEO-GAME\BUILD-VS2022\CMAKEFILES\331FF71A8564C6A9946E18F05FE0DA0B\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/chris/OneDrive/Documents/GitHub/video-game -BC:/Users/chris/OneDrive/Documents/GitHub/video-game/build-vs2022 --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/chris/OneDrive/Documents/GitHub/video-game/build-vs2022/engine_prototype.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

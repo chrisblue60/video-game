@@ -21,6 +21,7 @@
 #include <string>
 
 #include "playtest/PlaytestSimulation.hpp"
+#include "playtest/VisualRules.hpp"
 
 namespace {
 constexpr int kWidth = 1280;
@@ -60,55 +61,17 @@ float AccuracyPercent(const PlaytestState& state) {
     if (state.weapon.shotsFired <= 0) return 0.0f;
     return (100.0f * static_cast<float>(state.weapon.shotsHit)) / static_cast<float>(state.weapon.shotsFired);
 }
-bool ProjectPoint(const PlaytestState& state, float wx, float wy, float wz, int& sx, int& sy) {
-    constexpr float pi = 3.14159265358979323846f;
-    const float yaw = state.camera.yawDeg * pi / 180.0f;
-    const float pitch = (state.camera.pitchDeg + state.camera.recoilPitchDeg) * pi / 180.0f;
-    const float dx = wx - state.camera.x;
-    const float dy = wy - state.camera.y;
-    const float dz = wz - state.camera.z;
-
-    const float cy = std::cos(yaw);
-    const float syaw = std::sin(yaw);
-    const float x1 = cy * dx - syaw * dz;
-    const float z1 = syaw * dx + cy * dz;
-    const float y1 = dy;
-
-    const float cp = std::cos(pitch);
-    const float sp = std::sin(pitch);
-    const float y2 = cp * y1 - sp * z1;
-    const float z2 = sp * y1 + cp * z1;
-    if (z2 <= 0.1f) {
-        return false;
-    }
-
-    const float focal = 550.0f;
-    sx = static_cast<int>(kWidth * 0.5f + (x1 / z2) * focal);
-    sy = static_cast<int>(kHeight * 0.5f - (y2 / z2) * focal);
-    return sx >= -50 && sx <= kWidth + 50 && sy >= -50 && sy <= kHeight + 50;
-}
-
-float CameraSpaceDepth(const PlaytestState& state, float wx, float wz) {
-    constexpr float pi = 3.14159265358979323846f;
-    const float yaw = state.camera.yawDeg * pi / 180.0f;
-    const float dx = wx - state.camera.x;
-    const float dz = wz - state.camera.z;
-    const float syaw = std::sin(yaw);
-    const float cy = std::cos(yaw);
-    return syaw * dx + cy * dz;
-}
-
 void DrawProjectedQuad(SDL_Renderer* renderer, const PlaytestState& state, float x, float y, float z, float halfW, float h) {
-    int sx1 = 0, sy1 = 0, sx2 = 0, sy2 = 0, sx3 = 0, sy3 = 0, sx4 = 0, sy4 = 0;
-    if (!ProjectPoint(state, x - halfW, y + h, z, sx1, sy1)) return;
-    if (!ProjectPoint(state, x + halfW, y + h, z, sx2, sy2)) return;
-    if (!ProjectPoint(state, x + halfW, y, z, sx3, sy3)) return;
-    if (!ProjectPoint(state, x - halfW, y, z, sx4, sy4)) return;
+    const ScreenPoint p1 = VisualRules::ProjectPoint(state, kWidth, kHeight, x - halfW, y + h, z);
+    const ScreenPoint p2 = VisualRules::ProjectPoint(state, kWidth, kHeight, x + halfW, y + h, z);
+    const ScreenPoint p3 = VisualRules::ProjectPoint(state, kWidth, kHeight, x + halfW, y, z);
+    const ScreenPoint p4 = VisualRules::ProjectPoint(state, kWidth, kHeight, x - halfW, y, z);
+    if (!p1.visible || !p2.visible || !p3.visible || !p4.visible) return;
 
-    SDL_RenderDrawLine(renderer, sx1, sy1, sx2, sy2);
-    SDL_RenderDrawLine(renderer, sx2, sy2, sx3, sy3);
-    SDL_RenderDrawLine(renderer, sx3, sy3, sx4, sy4);
-    SDL_RenderDrawLine(renderer, sx4, sy4, sx1, sy1);
+    SDL_RenderDrawLine(renderer, p1.x, p1.y, p2.x, p2.y);
+    SDL_RenderDrawLine(renderer, p2.x, p2.y, p3.x, p3.y);
+    SDL_RenderDrawLine(renderer, p3.x, p3.y, p4.x, p4.y);
+    SDL_RenderDrawLine(renderer, p4.x, p4.y, p1.x, p1.y);
 }
 
 void RenderGrid(SDL_Renderer* renderer, const PlaytestState& state, int horizon) {
@@ -128,14 +91,13 @@ void RenderGrid(SDL_Renderer* renderer, const PlaytestState& state, int horizon)
 
 void RenderTargets(SDL_Renderer* renderer, const PlaytestState& state) {
     for (const auto& target : state.targets) {
-        int baseSx = 0;
-        int baseSy = 0;
-        if (!ProjectPoint(state, target.x, target.y, target.z, baseSx, baseSy)) {
+        const ScreenPoint basePoint = VisualRules::ProjectPoint(state, kWidth, kHeight, target.x, target.y, target.z);
+        if (!basePoint.visible) {
             continue;
         }
-        const float depth = CameraSpaceDepth(state, target.x, target.z);
+        const float depth = VisualRules::CameraDepth(state, target.x, target.z);
         if (depth <= 0.1f) continue;
-        const float scale = std::clamp(14.0f / (depth + 0.5f), 0.35f, 2.8f);
+        const float scale = VisualRules::PerspectiveScale(depth);
         const int halfW = static_cast<int>(8.0f * scale);
         const int height = static_cast<int>(32.0f * scale);
 
@@ -152,23 +114,26 @@ void RenderTargets(SDL_Renderer* renderer, const PlaytestState& state) {
         // Drop shadow: farther targets cast lighter/smaller shadows to help depth reading.
         const int shadowAlpha = static_cast<int>(std::clamp(180.0f - depth * 8.0f, 40.0f, 180.0f));
         SDL_SetRenderDrawColor(renderer, 20, 20, 20, shadowAlpha);
-        int shLx = 0, shLy = 0, shRx = 0, shRy = 0;
-        if (ProjectPoint(state, target.x - 0.35f, 0.02f, target.z, shLx, shLy) &&
-            ProjectPoint(state, target.x + 0.35f, 0.02f, target.z, shRx, shRy)) {
-            SDL_RenderDrawLine(renderer, shLx, shLy, shRx, shRy);
-            SDL_RenderDrawLine(renderer, shLx, shLy + 1, shRx, shRy + 1);
+        const ScreenPoint shL = VisualRules::ProjectPoint(state, kWidth, kHeight, target.x - 0.35f, 0.02f, target.z);
+        const ScreenPoint shR = VisualRules::ProjectPoint(state, kWidth, kHeight, target.x + 0.35f, 0.02f, target.z);
+        if (shL.visible && shR.visible) {
+            SDL_RenderDrawLine(renderer, shL.x, shL.y, shR.x, shR.y);
+            SDL_RenderDrawLine(renderer, shL.x, shL.y + 1, shR.x, shR.y + 1);
         }
 
         // Center marker scales with distance.
         SDL_SetRenderDrawColor(renderer, 255, 245, 210, 255);
-        SDL_RenderDrawLine(renderer, baseSx - halfW, baseSy - height / 2, baseSx + halfW, baseSy - height / 2);
+        SDL_RenderDrawLine(renderer, basePoint.x - halfW, basePoint.y - height / 2, basePoint.x + halfW, basePoint.y - height / 2);
     }
 }
 
 void RenderWorldObjects(SDL_Renderer* renderer, const PlaytestState& state) {
     for (const auto& object : state.worldObjects) {
-        int sx = 0, sy = 0;
-        if (!ProjectPoint(state, object.x, object.y, object.z, sx, sy)) continue;
+        const ScreenPoint point = VisualRules::ProjectPoint(state, kWidth, kHeight, object.x, object.y, object.z);
+        if (!point.visible) continue;
+        const float depth = VisualRules::CameraDepth(state, object.x, object.z);
+        const float scale = VisualRules::PerspectiveScale(depth);
+        const int markerHalf = static_cast<int>(10.0f * scale);
         if (object.interaction == InteractionType::LibraryTerminal) {
             SDL_SetRenderDrawColor(renderer, 90, 170, 255, 255);
         } else if (object.interaction == InteractionType::BuildParcel) {
@@ -176,7 +141,7 @@ void RenderWorldObjects(SDL_Renderer* renderer, const PlaytestState& state) {
         } else {
             SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
         }
-        SDL_Rect marker{sx - 10, sy - 20, 20, 20};
+        SDL_Rect marker{point.x - markerHalf, point.y - markerHalf * 2, markerHalf * 2, markerHalf * 2};
         SDL_RenderDrawRect(renderer, &marker);
     }
 }

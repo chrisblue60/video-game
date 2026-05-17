@@ -1,4 +1,5 @@
 #include "playtest/PlaytestSimulation.hpp"
+#include "playtest/VisualRules.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -25,6 +26,7 @@ int main() {
     { PlaytestState s{}; s.player.x=-6.0F; s.player.z=12.0F; PlaytestInput i{}; i.interact=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(std::string(s.worldRules.lastInteraction).find("Library opened")==std::string::npos) return Fail("library interact"); }
     { PlaytestState s{}; s.player.x=6.0F; s.player.z=10.0F; PlaytestInput i{}; i.placeStructure=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(s.worldRules.placedStructures!=1||s.worldRules.buildCredits!=3) return Fail("place structure in parcel"); }
     { PlaytestState s{}; PlaytestInput i{}; i.placeStructure=true; PlaytestSimulation::Step(s,i,1.0F/60.0F); if(std::string(s.worldRules.lastInteraction).find("move into a build parcel")==std::string::npos) return Fail("prevent place outside parcel"); }
+    { if(!(VisualRules::PerspectiveScale(4.0F) > VisualRules::PerspectiveScale(20.0F))) return Fail("perspective scale depth rule"); }
 
     std::cout << "[PASS] PlaytestSimulation tests\n";
     return 0;

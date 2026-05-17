@@ -27,6 +27,7 @@ struct WeaponState {
     int reserveAmmo = 90;
     float fireCooldownSeconds = 0.0F;
     int shotsFired = 0;
+    int shotsHit = 0;
 };
 
 struct TargetState {

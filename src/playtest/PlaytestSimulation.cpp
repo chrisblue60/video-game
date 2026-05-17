@@ -46,6 +46,8 @@ void ResetRound(PlaytestState& state) {
     state.weapon.reserveAmmo = 90;
     state.weapon.fireCooldownSeconds = 0.0F;
     state.combat.targetsHit = 0;
+    state.weapon.shotsFired = 0;
+    state.weapon.shotsHit = 0;
     state.combat.roundTimeSeconds = 0.0F;
 }
 
@@ -81,6 +83,7 @@ void ResolveHitscan(PlaytestState& state) {
             target.alive = false;
             target.hitFlashSeconds = kHitFlashSeconds;
             state.combat.targetsHit += 1;
+            state.weapon.shotsHit += 1;
             return;
         }
     }

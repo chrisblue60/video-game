@@ -17,6 +17,7 @@
 #if HAVE_SDL
 #include <cmath>
 #include <sstream>
+#include <string>
 
 #include "playtest/PlaytestSimulation.hpp"
 
@@ -51,6 +52,11 @@ int AliveTargets(const PlaytestState& state) {
     return alive;
 }
 
+
+float AccuracyPercent(const PlaytestState& state) {
+    if (state.weapon.shotsFired <= 0) return 0.0f;
+    return (100.0f * static_cast<float>(state.weapon.shotsHit)) / static_cast<float>(state.weapon.shotsFired);
+}
 bool ProjectPoint(const PlaytestState& state, float wx, float wy, float wz, int& sx, int& sy) {
     constexpr float pi = 3.14159265358979323846f;
     const float yaw = state.camera.yawDeg * pi / 180.0f;
@@ -117,6 +123,57 @@ void RenderTargets(SDL_Renderer* renderer, const PlaytestState& state) {
     }
 }
 
+
+void DrawDigit(SDL_Renderer* renderer, int x, int y, int scale, int digit) {
+    static constexpr bool seg[10][7] = {
+        {1,1,1,1,1,1,0}, {0,1,1,0,0,0,0}, {1,1,0,1,1,0,1}, {1,1,1,1,0,0,1}, {0,1,1,0,0,1,1},
+        {1,0,1,1,0,1,1}, {1,0,1,1,1,1,1}, {1,1,1,0,0,0,0}, {1,1,1,1,1,1,1}, {1,1,1,1,0,1,1}
+    };
+    auto line=[&](int x1,int y1,int x2,int y2){ SDL_RenderDrawLine(renderer,x1,y1,x2,y2); };
+    int w=6*scale,h=10*scale;
+    if(seg[digit][0]) line(x,y,x+w,y);
+    if(seg[digit][1]) line(x+w,y,x+w,y+h/2);
+    if(seg[digit][2]) line(x+w,y+h/2,x+w,y+h);
+    if(seg[digit][3]) line(x,y+h,x+w,y+h);
+    if(seg[digit][4]) line(x,y+h/2,x,y+h);
+    if(seg[digit][5]) line(x,y,x,y+h/2);
+    if(seg[digit][6]) line(x,y+h/2,x+w,y+h/2);
+}
+
+void DrawNumber(SDL_Renderer* renderer, int x, int y, int scale, int value) {
+    if (value < 0) value = 0;
+    std::string s = std::to_string(value);
+    for (size_t i = 0; i < s.size(); ++i) DrawDigit(renderer, x + static_cast<int>(i) * (8 * scale), y, scale, s[i]-'0');
+}
+
+void DrawHudOverlay(SDL_Renderer* renderer, const PlaytestState& state) {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 160);
+    SDL_Rect panel{16, 16, 340, 120};
+    SDL_RenderFillRect(renderer, &panel);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(renderer, &panel);
+
+    // Row 1: Hits / Alive
+    DrawNumber(renderer, 30, 30, 2, state.combat.targetsHit);
+    DrawNumber(renderer, 130, 30, 2, AliveTargets(state));
+
+    // Row 2: Ammo current / reserve
+    DrawNumber(renderer, 30, 62, 2, state.weapon.ammoInMag);
+    DrawNumber(renderer, 130, 62, 2, state.weapon.reserveAmmo);
+
+    // Row 3: Recoil / Accuracy
+    DrawNumber(renderer, 30, 94, 2, static_cast<int>(state.camera.recoilPitchDeg * 10.0f));
+    DrawNumber(renderer, 130, 94, 2, static_cast<int>(AccuracyPercent(state)));
+
+    // small bars
+    SDL_Rect accBarBg{230, 94, 100, 12};
+    SDL_RenderDrawRect(renderer, &accBarBg);
+    SDL_SetRenderDrawColor(renderer, 40, 220, 90, 255);
+    SDL_Rect accBar{231, 95, static_cast<int>(std::min(98.0f, AccuracyPercent(state) * 0.98f)), 10};
+    SDL_RenderFillRect(renderer, &accBar);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+}
+
 void RenderScene(SDL_Renderer* renderer, const PlaytestState& state) {
     const int horizon = static_cast<int>(kHeight * 0.5f - (state.camera.pitchDeg + state.camera.recoilPitchDeg) * 2.2f);
 
@@ -135,23 +192,7 @@ void RenderScene(SDL_Renderer* renderer, const PlaytestState& state) {
     SDL_RenderDrawLine(renderer, kWidth / 2 - 8, kHeight / 2, kWidth / 2 + 8, kHeight / 2);
     SDL_RenderDrawLine(renderer, kWidth / 2, kHeight / 2 - 8, kWidth / 2, kHeight / 2 + 8);
 
-    std::ostringstream title;
-    title << "Playtest | Pos(" << state.player.x << ", " << state.player.y << ", " << state.player.z
-          << ") Vel(" << state.player.vx << ", " << state.player.vy << ", " << state.player.vz
-          << ") TOD=" << state.clock.TimeOfDayHours() << "h"
-          << " Ammo=" << state.weapon.ammoInMag << "/" << state.weapon.reserveAmmo
-          << " Hits=" << state.combat.targetsHit
-          << " Alive=" << AliveTargets(state)
-          << " Round=" << state.combat.roundTimeSeconds
-          << " Best=" << state.combat.bestRoundSeconds
-          << " Recoil=" << state.camera.recoilPitchDeg;
-#if SDL_VER == 3
-    SDL_SetWindowTitle(SDL_GetRenderWindow(renderer), title.str().c_str());
-#else
-    SDL_Window* window = SDL_RenderGetWindow(renderer);
-    SDL_SetWindowTitle(window, title.str().c_str());
-#endif
-
+    DrawHudOverlay(renderer, state);
     SDL_RenderPresent(renderer);
 }
 }  // namespace

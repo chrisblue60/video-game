@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\Engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\GameLoop.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\EngineConfigLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\WorldClock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\SubsystemPipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\EntityManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\TransformStore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\VelocityStore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\GravityStore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\ColliderStore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\core\World.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\subsystems\Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\subsystems\Physics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\src\subsystems\WorldSim.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\chris\OneDrive\Documents\GitHub\video-game\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{AB7AA3D8-6782-34D4-A884-E4647558A629}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

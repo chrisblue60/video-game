@@ -22,6 +22,7 @@
 #include <string>
 
 #include "playtest/PlaytestSimulation.hpp"
+#include "playtest/RenderStyleLibrary.hpp"
 #include "playtest/VisualRules.hpp"
 
 namespace {
@@ -91,6 +92,8 @@ void RenderGrid(SDL_Renderer* renderer, const PlaytestState& state, int horizon)
 }
 
 void RenderTargets(SDL_Renderer* renderer, const PlaytestState& state) {
+    const CharacterRenderProfile profile = RenderStyleLibrary::DefaultTargetProfile();
+    const float walkPhase = state.combat.roundTimeSeconds * 8.0F;
     for (const auto& target : state.targets) {
         const ScreenPoint basePoint = VisualRules::ProjectPointClamped(state, kWidth, kHeight, target.x, target.y, target.z, 0.22F);
         if (!basePoint.visible) {
@@ -110,7 +113,11 @@ void RenderTargets(SDL_Renderer* renderer, const PlaytestState& state) {
         } else {
             SDL_SetRenderDrawColor(renderer, 240, 70, 70, 255);
         }
-        DrawProjectedQuad(renderer, state, target.x, target.y, target.z, 0.45f, 1.8f);
+        DrawProjectedQuad(renderer, state, target.x, target.y, target.z, profile.bodyHalfWidthMeters, profile.bodyHeightMeters);
+        const float sway = std::sin(walkPhase + target.x) * 0.08F;
+        DrawProjectedQuad(renderer, state, target.x, target.y + 1.15F, target.z, profile.shoulderWidthMeters * 0.5F + sway, 0.25F);
+        DrawProjectedQuad(renderer, state, target.x - 0.16F, target.y, target.z, 0.09F, profile.legLengthMeters);
+        DrawProjectedQuad(renderer, state, target.x + 0.16F, target.y, target.z, 0.09F, profile.legLengthMeters);
 
         // Drop shadow: farther targets cast lighter/smaller shadows to help depth reading.
         const int shadowAlpha = static_cast<int>(std::clamp(180.0f - depth * 8.0f, 40.0f, 180.0f));
@@ -222,12 +229,11 @@ void DrawHudOverlay(SDL_Renderer* renderer, const PlaytestState& state) {
 
 void RenderScene(SDL_Renderer* renderer, const PlaytestState& state) {
     const int horizon = static_cast<int>(kHeight * 0.5f - (state.camera.pitchDeg + state.camera.recoilPitchDeg) * 2.2f);
-
-    SDL_SetRenderDrawColor(renderer, state.clock.IsNight() ? 15 : 80, state.clock.IsNight() ? 18 : 130,
-                           state.clock.IsNight() ? 30 : 190, 255);
+    const RenderPalette palette = state.clock.IsNight() ? RenderStyleLibrary::NightPalette() : RenderStyleLibrary::DayPalette();
+    SDL_SetRenderDrawColor(renderer, palette.skyR, palette.skyG, palette.skyB, 255);
     SDL_RenderClear(renderer);
 
-    SDL_SetRenderDrawColor(renderer, 35, 120, 35, 255);
+    SDL_SetRenderDrawColor(renderer, palette.groundR, palette.groundG, palette.groundB, 255);
     SDL_Rect ground{0, horizon, kWidth, kHeight - horizon};
     SDL_RenderFillRect(renderer, &ground);
 

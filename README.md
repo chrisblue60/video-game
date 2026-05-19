@@ -67,3 +67,12 @@ ctest --test-dir build --output-on-failure
 - `MaterialType`: Use as a high-level classification for future rule branches (audio, VFX, penetration, ricochet, tools, destruction).
 
 This stack is designed to expand toward broad world simulation without re-implementing behavior per object type.
+
+## Real 3D Production Roadmap (next phases)
+- **Phase 1 (current)**: Structured rule libraries + pseudo-3D playtest renderer with perspective/occlusion/collision and style profiles.
+- **Phase 2**: Asset pipeline library (`mesh`, `material`, `skeleton`, `clip`) and import path (e.g., glTF).
+- **Phase 3**: Character animation library (state machine + blend tree) for locomotion, aim offsets, and interaction animations.
+- **Phase 4**: World art systems (instanced foliage/grass, modular building kits, PBR lighting/shadows, LOD streaming).
+- **Phase 5**: Runtime gameplay/world authoring inside the world itself (library/tutorial spaces, build tools, parcel permissions).
+
+The current codebase now includes explicit rendering style profiles to start consolidating art direction decisions in one place.

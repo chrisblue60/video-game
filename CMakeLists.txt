@@ -36,6 +36,7 @@ if(ENABLE_PLAYTEST_SDL)
       src/playtest/PlaytestSimulation.cpp
       src/playtest/ActionRules.cpp
       src/playtest/BulletRules.cpp
+      src/playtest/RenderStyleLibrary.cpp
       src/playtest/VisualRules.cpp
       src/core/WorldClock.cpp)
   target_include_directories(engine_playtest PRIVATE src)
@@ -75,6 +76,7 @@ add_executable(playtest_simulation_tests
     src/playtest/PlaytestSimulation.cpp
     src/playtest/ActionRules.cpp
     src/playtest/BulletRules.cpp
+    src/playtest/RenderStyleLibrary.cpp
     src/playtest/VisualRules.cpp
     src/core/WorldClock.cpp)
 target_include_directories(playtest_simulation_tests PRIVATE src)
